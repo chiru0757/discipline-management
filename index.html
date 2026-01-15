@@ -4,15 +4,14 @@
 <meta charset="UTF-8">
 <title>Discipline Management System</title>
 
-<!-- PDF & Excel -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
 body{font-family:Segoe UI;background:#eef2f7;margin:0}
 header{background:#1e293b;color:#fff;padding:15px;text-align:center}
-.box{background:#fff;max-width:1100px;margin:20px auto;padding:20px;border-radius:10px;box-shadow:0 10px 20px rgba(0,0,0,.1)}
-h3{text-align:center;color:#1e293b}
+.box{background:#fff;max-width:1200px;margin:20px auto;padding:20px;border-radius:10px;box-shadow:0 10px 20px rgba(0,0,0,.1)}
+h3{text-align:center}
 input,select,button{padding:8px;margin:5px}
 button{background:#2563eb;color:#fff;border:none;border-radius:5px;cursor:pointer}
 button:hover{background:#1e40af}
@@ -38,7 +37,7 @@ th{background:#334155;color:#fff}
 <option value="admin">Admin</option>
 <option value="student">Student</option>
 </select><br>
-<input id="username" placeholder="Username / Reg No"><br>
+<input id="username" placeholder="Username / Register No"><br>
 <input id="password" type="password" placeholder="Password"><br>
 <button onclick="login()">Login</button>
 </div>
@@ -55,14 +54,14 @@ th{background:#334155;color:#fff}
 </div>
 </div>
 
-<!-- STUDENTS ENTRY -->
+<!-- STUDENT LIST -->
 <div class="box hidden" id="studentBox">
 <h3 id="classTitle"></h3>
 <table>
 <thead>
 <tr>
 <th>Reg No</th>
-<th>Student Name</th>
+<th>Student Name (Editable)</th>
 <th>Issue</th>
 <th>Save</th>
 </tr>
@@ -111,8 +110,24 @@ th{background:#334155;color:#fff}
 
 <script>
 let currentClass="";
-let records = JSON.parse(localStorage.getItem("records")) || [];
 let loggedStudent="";
+
+let students = JSON.parse(localStorage.getItem("students")) || {};
+let records  = JSON.parse(localStorage.getItem("records")) || [];
+
+/* INITIALIZE STUDENTS */
+["BCA A","BCA B","BCA C"].forEach(cls=>{
+  if(!students[cls]){
+    students[cls]=[];
+    for(let i=1;i<=40;i++){
+      students[cls].push({
+        reg: cls.replace(" ","").toUpperCase()+(100+i),
+        name: "Student "+i
+      });
+    }
+  }
+});
+localStorage.setItem("students",JSON.stringify(students));
 
 /* LOGIN */
 function login(){
@@ -131,11 +146,11 @@ function login(){
       loginBox.classList.add("hidden");
       studentView.classList.remove("hidden");
       loadStudentRecords();
-    } else alert("Invalid Student Credentials");
+    } else alert("Invalid Student Login");
   }
 }
 
-/* ADMIN STUDENTS */
+/* OPEN CLASS */
 function openClass(cls){
   currentClass=cls;
   adminHome.classList.add("hidden");
@@ -143,14 +158,15 @@ function openClass(cls){
   classTitle.innerText=cls+" Students";
   studentTable.innerHTML="";
 
-  for(let i=1;i<=40;i++){
-    let reg=cls.replace(" ","").toUpperCase()+ (100+i);
+  students[cls].forEach((s,i)=>{
     studentTable.innerHTML+=`
     <tr>
-      <td>${reg}</td>
-      <td>${cls} Student ${i}</td>
+      <td>${s.reg}</td>
       <td>
-        <select id="issue_${reg}">
+        <input value="${s.name}" onchange="updateName('${cls}',${i},this.value)">
+      </td>
+      <td>
+        <select id="issue_${s.reg}">
           <option value="">Select</option>
           <option>Haircut</option>
           <option>Uniform</option>
@@ -159,22 +175,31 @@ function openClass(cls){
           <option>Mobile Usage</option>
         </select>
       </td>
-      <td><button onclick="saveRecord('${reg}','${cls} Student ${i}')">Save</button></td>
+      <td><button onclick="saveRecord('${cls}','${s.reg}',${i})">Save</button></td>
     </tr>`;
-  }
+  });
 }
 
-/* SAVE */
-function saveRecord(reg,name){
+/* UPDATE NAME */
+function updateName(cls,i,val){
+  students[cls][i].name=val;
+  localStorage.setItem("students",JSON.stringify(students));
+}
+
+/* SAVE RECORD */
+function saveRecord(cls,reg,i){
   let issue=document.getElementById("issue_"+reg).value;
   if(!issue){alert("Select issue");return;}
+
   records.push({
-    class:currentClass,
-    reg,name,issue,
+    class:cls,
+    reg:reg,
+    name:students[cls][i].name,
+    issue:issue,
     time:new Date().toLocaleString()
   });
   localStorage.setItem("records",JSON.stringify(records));
-  alert("Saved Successfully");
+  alert("Record Saved");
 }
 
 /* RECORDS */
@@ -247,9 +272,7 @@ function back(){
   adminHome.classList.remove("hidden");
 }
 
-function logout(){
-  location.reload();
-}
+function logout(){location.reload();}
 </script>
 
 </body>
