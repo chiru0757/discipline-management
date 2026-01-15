@@ -54,14 +54,14 @@ th{background:#334155;color:#fff}
 </div>
 </div>
 
-<!-- STUDENT LIST -->
+<!-- STUDENTS -->
 <div class="box hidden" id="studentBox">
 <h3 id="classTitle"></h3>
 <table>
 <thead>
 <tr>
-<th>Reg No</th>
-<th>Student Name (Editable)</th>
+<th>Register No</th>
+<th>Student Name</th>
 <th>Issue</th>
 <th>Save</th>
 </tr>
@@ -109,25 +109,24 @@ th{background:#334155;color:#fff}
 </div>
 
 <script>
-let currentClass="";
-let loggedStudent="";
+/* STUDENT MASTER DATA (METHOD 2) */
+const students = {
+  "BCA A": Array.from({length:40},(_,i)=>({
+    reg:`U03ZX24S${String(i+1).padStart(4,'0')}`,
+    name:`BCA A Student ${i+1}`
+  })),
+  "BCA B": Array.from({length:40},(_,i)=>({
+    reg:`U03ZX24S${String(i+41).padStart(4,'0')}`,
+    name:`BCA B Student ${i+1}`
+  })),
+  "BCA C": Array.from({length:40},(_,i)=>({
+    reg:`U03ZX24S${String(i+81).padStart(4,'0')}`,
+    name:`BCA C Student ${i+1}`
+  }))
+};
 
-let students = JSON.parse(localStorage.getItem("students")) || {};
-let records  = JSON.parse(localStorage.getItem("records")) || [];
-
-/* INITIALIZE STUDENTS */
-["BCA A","BCA B","BCA C"].forEach(cls=>{
-  if(!students[cls]){
-    students[cls]=[];
-    for(let i=1;i<=40;i++){
-      students[cls].push({
-        reg: cls.replace(" ","").toUpperCase()+(100+i),
-        name: "Student "+i
-      });
-    }
-  }
-});
-localStorage.setItem("students",JSON.stringify(students));
+let records = JSON.parse(localStorage.getItem("records")) || [];
+let currentClass="", loggedStudent="";
 
 /* LOGIN */
 function login(){
@@ -158,13 +157,11 @@ function openClass(cls){
   classTitle.innerText=cls+" Students";
   studentTable.innerHTML="";
 
-  students[cls].forEach((s,i)=>{
+  students[cls].forEach(s=>{
     studentTable.innerHTML+=`
     <tr>
       <td>${s.reg}</td>
-      <td>
-        <input value="${s.name}" onchange="updateName('${cls}',${i},this.value)">
-      </td>
+      <td>${s.name}</td>
       <td>
         <select id="issue_${s.reg}">
           <option value="">Select</option>
@@ -175,27 +172,17 @@ function openClass(cls){
           <option>Mobile Usage</option>
         </select>
       </td>
-      <td><button onclick="saveRecord('${cls}','${s.reg}',${i})">Save</button></td>
+      <td><button onclick="saveRecord('${cls}','${s.reg}','${s.name}')">Save</button></td>
     </tr>`;
   });
 }
 
-/* UPDATE NAME */
-function updateName(cls,i,val){
-  students[cls][i].name=val;
-  localStorage.setItem("students",JSON.stringify(students));
-}
-
 /* SAVE RECORD */
-function saveRecord(cls,reg,i){
+function saveRecord(cls,reg,name){
   let issue=document.getElementById("issue_"+reg).value;
   if(!issue){alert("Select issue");return;}
-
   records.push({
-    class:cls,
-    reg:reg,
-    name:students[cls][i].name,
-    issue:issue,
+    class:cls,reg,name,issue,
     time:new Date().toLocaleString()
   });
   localStorage.setItem("records",JSON.stringify(records));
@@ -271,7 +258,6 @@ function back(){
   recordBox.classList.add("hidden");
   adminHome.classList.remove("hidden");
 }
-
 function logout(){location.reload();}
 </script>
 
