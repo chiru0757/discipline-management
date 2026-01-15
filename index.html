@@ -23,7 +23,6 @@ th{background:#334155;color:#fff}
 .center{text-align:center}
 </style>
 </head>
-
 <body>
 
 <header>
@@ -109,26 +108,37 @@ th{background:#334155;color:#fff}
 </div>
 
 <script>
-/* STUDENT MASTER DATA (METHOD 2) */
+// 🟢 REAL STUDENT NAMES
 const students = {
-  "BCA A": Array.from({length:40},(_,i)=>({
-    reg:`U03ZX24S${String(i+1).padStart(4,'0')}`,
-    name:`BCA A Student ${i+1}`
-  })),
-  "BCA B": Array.from({length:40},(_,i)=>({
-    reg:`U03ZX24S${String(i+41).padStart(4,'0')}`,
-    name:`BCA B Student ${i+1}`
-  })),
-  "BCA C": Array.from({length:40},(_,i)=>({
-    reg:`U03ZX24S${String(i+81).padStart(4,'0')}`,
-    name:`BCA C Student ${i+1}`
-  }))
+  "BCA A":[
+"Arun Kumar","Bala Murugan","Charan Raj","Deepak S","Ezhil","Farooq","Gokul","Hari","Irfan","Jeeva",
+"Karthik","Lokesh","Manoj","Naveen","Om Prakash","Pradeep","Rahul","Santhosh","Tamil","Vignesh",
+"Yogesh","Abhishek","Bhaskar","Chandru","Dinesh","Elango","Ganesh","Hemant","Imran","Jayanth",
+"Kavin","Lalit","Madhan","Nithin","Prasanna","Rakesh","Suresh","Tharun","Uday","Varun"],
+  "BCA B":[
+"Aakash","Balaji","Chaitanya","Darshan","Eshwar","Fahad","Girish","Harish","Ishan","Jagan",
+"Kiran","Lakshman","Manikandan","Naveen","Omkar","Prakash","Rithik","Sathish","Tejas","Vijay",
+"Yash","Aravind","Bharath","Chetan","Dev","Emanuel","Francis","Gautham","Hariharan","Irfan",
+"Jithin","Karthikeyan","Lokesh","Mohith","Naren","Pranav","Rohit","Sanjay","Tarun","Vimal"],
+  "BCA C":[
+"Aditya","Bhanu","Chandan","Dilip","Eshan","Farhan","Gautam","Hemanth","Ilyas","Jashwanth",
+"Keshav","Lohith","Manav","Nikhil","Owais","Pavan","Qasim","Raghav","Sameer","Tanmay",
+"Utkarsh","Vikas","Wasim","Yuvraj","Zeeshan","Aman","Bhuvan","Cyril","Dhanush","Ebrahim",
+"Faizan","Girish","Hitesh","Indrajit","Junaid","Krishna","Lalit","Mitesh","Naveed","Om"]
 };
 
+// 🟢 REGISTER NUMBERS
+const regNumbers = {
+  "BCA A": Array.from({length:40},(_,i)=>`U03ZX24S${String(i+1).padStart(4,'0')}`),
+  "BCA B": Array.from({length:40},(_,i)=>`U03ZX24S${String(i+41).padStart(4,'0')}`),
+  "BCA C": Array.from({length:40},(_,i)=>`U03ZX24S${String(i+81).padStart(4,'0')}`)
+};
+
+// 🟢 RECORDS
 let records = JSON.parse(localStorage.getItem("records")) || [];
 let currentClass="", loggedStudent="";
 
-/* LOGIN */
+// LOGIN
 function login(){
   let u=username.value.trim();
   let p=password.value.trim();
@@ -140,7 +150,7 @@ function login(){
       adminHome.classList.remove("hidden");
     } else alert("Invalid Admin Credentials");
   } else {
-    if(p==="student123"){
+    if(p==="student123" && isValidStudent(u)){
       loggedStudent=u;
       loginBox.classList.add("hidden");
       studentView.classList.remove("hidden");
@@ -149,21 +159,25 @@ function login(){
   }
 }
 
-/* OPEN CLASS */
+// CHECK IF STUDENT EXISTS
+function isValidStudent(u){
+  return Object.keys(regNumbers).some(cls=>regNumbers[cls].includes(u));
+}
+
+// OPEN CLASS
 function openClass(cls){
   currentClass=cls;
   adminHome.classList.add("hidden");
   studentBox.classList.remove("hidden");
   classTitle.innerText=cls+" Students";
   studentTable.innerHTML="";
-
-  students[cls].forEach(s=>{
+  for(let i=0;i<40;i++){
     studentTable.innerHTML+=`
     <tr>
-      <td>${s.reg}</td>
-      <td>${s.name}</td>
+      <td>${regNumbers[cls][i]}</td>
+      <td>${students[cls][i]}</td>
       <td>
-        <select id="issue_${s.reg}">
+        <select id="issue_${regNumbers[cls][i]}">
           <option value="">Select</option>
           <option>Haircut</option>
           <option>Uniform</option>
@@ -172,12 +186,12 @@ function openClass(cls){
           <option>Mobile Usage</option>
         </select>
       </td>
-      <td><button onclick="saveRecord('${cls}','${s.reg}','${s.name}')">Save</button></td>
+      <td><button onclick="saveRecord('${cls}','${regNumbers[cls][i]}','${students[cls][i]}')">Save</button></td>
     </tr>`;
-  });
+  }
 }
 
-/* SAVE RECORD */
+// SAVE RECORD
 function saveRecord(cls,reg,name){
   let issue=document.getElementById("issue_"+reg).value;
   if(!issue){alert("Select issue");return;}
@@ -189,7 +203,7 @@ function saveRecord(cls,reg,name){
   alert("Record Saved");
 }
 
-/* RECORDS */
+// RECORDS
 function openRecords(){
   adminHome.classList.add("hidden");
   recordBox.classList.remove("hidden");
@@ -219,7 +233,7 @@ function del(i){
   }
 }
 
-/* STUDENT VIEW */
+// STUDENT VIEW
 function loadStudentRecords(){
   studentRecords.innerHTML="";
   records.filter(r=>r.reg===loggedStudent).forEach(r=>{
@@ -232,7 +246,7 @@ function loadStudentRecords(){
   });
 }
 
-/* EXPORT */
+// EXPORT
 function exportPDF(){
   const {jsPDF}=window.jspdf;
   let doc=new jsPDF();
@@ -252,7 +266,7 @@ function exportExcel(){
   XLSX.writeFile(wb,"records.xlsx");
 }
 
-/* NAV */
+// NAVIGATION
 function back(){
   studentBox.classList.add("hidden");
   recordBox.classList.add("hidden");
@@ -260,6 +274,5 @@ function back(){
 }
 function logout(){location.reload();}
 </script>
-
 </body>
 </html>
