@@ -4,272 +4,326 @@
 <meta charset="UTF-8">
 <title>Discipline Management System</title>
 
+<!-- LIBRARIES -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
-body{font-family:Segoe UI;background:#eef2f7;margin:0}
-header{background:#1e293b;color:#fff;padding:15px;text-align:center}
-.box{background:#fff;max-width:1200px;margin:20px auto;padding:20px;border-radius:10px;box-shadow:0 10px 20px rgba(0,0,0,.1)}
-h3{text-align:center}
-input,select,button{padding:8px;margin:5px}
-button{background:#2563eb;color:#fff;border:none;border-radius:5px;cursor:pointer}
+*{box-sizing:border-box}
+body{
+  font-family:Segoe UI,Arial;
+  background:#f1f5f9;
+  margin:0;
+}
+header{
+  background:#0f172a;
+  color:#fff;
+  padding:12px;
+  text-align:center;
+  font-size:18px;
+}
+.box{
+  background:#fff;
+  margin:12px;
+  padding:15px;
+  border-radius:12px;
+  box-shadow:0 4px 15px rgba(0,0,0,.08);
+}
+h3{text-align:center;margin-top:0}
+input,select,button{
+  width:100%;
+  padding:10px;
+  margin:6px 0;
+  font-size:14px;
+}
+button{
+  background:#2563eb;
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
 button:hover{background:#1e40af}
 button.danger{background:#dc2626}
-table{width:100%;border-collapse:collapse;margin-top:10px}
-th,td{border:1px solid #ccc;padding:8px;text-align:center}
-th{background:#334155;color:#fff}
 .hidden{display:none}
 .center{text-align:center}
+
+.table-wrap{overflow-x:auto}
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+}
+th,td{
+  border:1px solid #e5e7eb;
+  padding:6px;
+  text-align:center;
+}
+th{
+  background:#1e293b;
+  color:#fff;
+}
+
+/* DASHBOARD */
+.dashboard{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:12px;
+}
+.card{
+  background:#f8fafc;
+  padding:15px;
+  border-radius:12px;
+  text-align:center;
+}
+.card h2{margin:5px 0;color:#2563eb}
+.card p{margin:0;font-size:13px;color:#475569}
 </style>
 </head>
-<body>
 
-<header>
-<h2>Discipline Management System</h2>
-</header>
+<body>
+<header>Discipline Management System</header>
 
 <!-- LOGIN -->
 <div class="box" id="loginBox">
-<h3>Login</h3>
-<select id="role">
-<option value="admin">Admin</option>
-<option value="student">Student</option>
-</select><br>
-<input id="username" placeholder="Username / Register No"><br>
-<input id="password" type="password" placeholder="Password"><br>
-<button onclick="login()">Login</button>
+  <h3>Login</h3>
+  <select id="role">
+    <option value="admin">Admin</option>
+    <option value="student">Student</option>
+  </select>
+  <input id="username" placeholder="Username / Register No">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="login()">Login</button>
 </div>
 
 <!-- ADMIN HOME -->
 <div class="box hidden" id="adminHome">
-<h3>CLASS AND SECTION</h3>
-<div class="center">
-<button onclick="openClass('BCA A')">BCA A</button>
-<button onclick="openClass('BCA B')">BCA B</button>
-<button onclick="openClass('BCA C')">BCA C</button><br><br>
-<button onclick="openRecords()">📄 View Saved Records</button>
-<button onclick="logout()">Logout</button>
-</div>
+  <h3>Admin Panel</h3>
+  <button onclick="openClass('BCA A')">BCA A</button>
+  <button onclick="openClass('BCA B')">BCA B</button>
+  <button onclick="openClass('BCA C')">BCA C</button>
+  <br><br>
+  <button onclick="openRecords()">📄 Records</button>
+  <button onclick="openDashboard()">📊 Analytics</button>
+  <button onclick="logout()">Logout</button>
 </div>
 
-<!-- STUDENTS -->
+<!-- STUDENT ENTRY -->
 <div class="box hidden" id="studentBox">
-<h3 id="classTitle"></h3>
-<table>
-<thead>
-<tr>
-<th>Register No</th>
-<th>Student Name</th>
-<th>Issue</th>
-<th>Save</th>
-</tr>
-</thead>
-<tbody id="studentTable"></tbody>
-</table>
-<button onclick="back()">⬅ Back</button>
+  <h3 id="classTitle"></h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Reg No</th>
+          <th>Name</th>
+          <th>Issue</th>
+          <th>Save</th>
+        </tr>
+      </thead>
+      <tbody id="studentTable"></tbody>
+    </table>
+  </div>
+  <button onclick="back()">⬅ Back</button>
 </div>
 
 <!-- RECORDS -->
 <div class="box hidden" id="recordBox">
-<h3>Saved Discipline Records</h3>
-<button onclick="exportPDF()">PDF</button>
-<button onclick="exportExcel()">Excel</button>
-<button onclick="back()">⬅ Back</button>
-<table>
-<thead>
-<tr>
-<th>Class</th>
-<th>Reg No</th>
-<th>Name</th>
-<th>Issue</th>
-<th>Date & Time</th>
-<th>Action</th>
-</tr>
-</thead>
-<tbody id="recordTable"></tbody>
-</table>
+  <h3>Saved Records</h3>
+  <button onclick="exportPDF()">PDF</button>
+  <button onclick="exportExcel()">Excel</button>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Class</th>
+          <th>Reg</th>
+          <th>Name</th>
+          <th>Issue</th>
+          <th>Date</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="recordTable"></tbody>
+    </table>
+  </div>
+  <button onclick="back()">⬅ Back</button>
+</div>
+
+<!-- DASHBOARD -->
+<div class="box hidden" id="dashboardBox">
+  <h3>📊 Analytics Dashboard</h3>
+  <div class="dashboard">
+    <div class="card"><p>Total Records</p><h2 id="totalCount">0</h2></div>
+    <div class="card"><p>Haircut</p><h2 id="haircutCount">0</h2></div>
+    <div class="card"><p>Uniform</p><h2 id="uniformCount">0</h2></div>
+    <div class="card"><p>Late Coming</p><h2 id="lateCount">0</h2></div>
+  </div>
+  <button onclick="back()">⬅ Back</button>
 </div>
 
 <!-- STUDENT VIEW -->
 <div class="box hidden" id="studentView">
-<h3>Your Discipline Records</h3>
-<table>
-<thead>
-<tr>
-<th>Class</th>
-<th>Issue</th>
-<th>Date & Time</th>
-</tr>
-</thead>
-<tbody id="studentRecords"></tbody>
-</table>
-<button onclick="logout()">Logout</button>
+  <h3>Your Records</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Class</th><th>Issue</th><th>Date</th></tr>
+      </thead>
+      <tbody id="studentRecords"></tbody>
+    </table>
+  </div>
+  <button onclick="logout()">Logout</button>
 </div>
 
 <script>
-// 🟢 REAL STUDENT NAMES
-const students = {
-  "BCA A":[
-"Arun Kumar","Bala Murugan","Charan Raj","Deepak S","Ezhil","Farooq","Gokul","Hari","Irfan","Jeeva",
-"Karthik","Lokesh","Manoj","Naveen","Om Prakash","Pradeep","Rahul","Santhosh","Tamil","Vignesh",
-"Yogesh","Abhishek","Bhaskar","Chandru","Dinesh","Elango","Ganesh","Hemant","Imran","Jayanth",
-"Kavin","Lalit","Madhan","Nithin","Prasanna","Rakesh","Suresh","Tharun","Uday","Varun"],
-  "BCA B":[
-"Aakash","Balaji","Chaitanya","Darshan","Eshwar","Fahad","Girish","Harish","Ishan","Jagan",
-"Kiran","Lakshman","Manikandan","Naveen","Omkar","Prakash","Rithik","Sathish","Tejas","Vijay",
-"Yash","Aravind","Bharath","Chetan","Dev","Emanuel","Francis","Gautham","Hariharan","Irfan",
-"Jithin","Karthikeyan","Lokesh","Mohith","Naren","Pranav","Rohit","Sanjay","Tarun","Vimal"],
-  "BCA C":[
-"Aditya","Bhanu","Chandan","Dilip","Eshan","Farhan","Gautam","Hemanth","Ilyas","Jashwanth",
-"Keshav","Lohith","Manav","Nikhil","Owais","Pavan","Qasim","Raghav","Sameer","Tanmay",
-"Utkarsh","Vikas","Wasim","Yuvraj","Zeeshan","Aman","Bhuvan","Cyril","Dhanush","Ebrahim",
-"Faizan","Girish","Hitesh","Indrajit","Junaid","Krishna","Lalit","Mitesh","Naveed","Om"]
+/* 🔑 SUPABASE CONFIG */
+const SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";
+const SUPABASE_KEY = "YOUR_PUBLIC_ANON_KEY";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* STUDENTS */
+const students={
+ "BCA A":["Arun","Bala","Charan","Deepak","Ezhil","Farooq","Gokul","Hari","Irfan","Jeeva"],
+ "BCA B":["Aakash","Balaji","Chaitanya","Darshan","Eshwar","Fahad","Girish","Harish","Ishan","Jagan"],
+ "BCA C":["Aditya","Bhanu","Chandan","Dilip","Eshan","Farhan","Gautam","Hemanth","Ilyas","Jashwanth"]
+};
+const regNumbers={
+ "BCA A":Array.from({length:10},(_,i)=>`U03ZX24A${i+1}`),
+ "BCA B":Array.from({length:10},(_,i)=>`U03ZX24B${i+1}`),
+ "BCA C":Array.from({length:10},(_,i)=>`U03ZX24C${i+1}`)
 };
 
-// 🟢 REGISTER NUMBERS
-const regNumbers = {
-  "BCA A": Array.from({length:40},(_,i)=>`U03ZX24S${String(i+1).padStart(4,'0')}`),
-  "BCA B": Array.from({length:40},(_,i)=>`U03ZX24S${String(i+41).padStart(4,'0')}`),
-  "BCA C": Array.from({length:40},(_,i)=>`U03ZX24S${String(i+81).padStart(4,'0')}`)
-};
-
-// 🟢 RECORDS
-let records = JSON.parse(localStorage.getItem("records")) || [];
 let currentClass="", loggedStudent="";
 
-// LOGIN
-function login(){
-  let u=username.value.trim();
-  let p=password.value.trim();
-  let r=role.value;
+/* LOGIN */
+async function login(){
+  const {data,error}=await supabase
+   .from("users")
+   .select("*")
+   .eq("username",username.value)
+   .eq("password",password.value)
+   .eq("role",role.value)
+   .single();
 
-  if(r==="admin"){
-    if(u==="RNSFGC" && p==="rns@1234"){
-      loginBox.classList.add("hidden");
-      adminHome.classList.remove("hidden");
-    } else alert("Invalid Admin Credentials");
-  } else {
-    if(p==="student123" && isValidStudent(u)){
-      loggedStudent=u;
-      loginBox.classList.add("hidden");
-      studentView.classList.remove("hidden");
-      loadStudentRecords();
-    } else alert("Invalid Student Login");
+  if(error){alert("Invalid Login");return;}
+
+  loginBox.classList.add("hidden");
+  if(role.value==="admin"){
+    adminHome.classList.remove("hidden");
+  }else{
+    loggedStudent=username.value;
+    studentView.classList.remove("hidden");
+    loadStudentRecords();
   }
 }
 
-// CHECK IF STUDENT EXISTS
-function isValidStudent(u){
-  return Object.keys(regNumbers).some(cls=>regNumbers[cls].includes(u));
-}
-
-// OPEN CLASS
+/* OPEN CLASS */
 function openClass(cls){
   currentClass=cls;
   adminHome.classList.add("hidden");
   studentBox.classList.remove("hidden");
-  classTitle.innerText=cls+" Students";
+  classTitle.innerText=cls;
   studentTable.innerHTML="";
-  for(let i=0;i<40;i++){
+  students[cls].forEach((s,i)=>{
     studentTable.innerHTML+=`
     <tr>
       <td>${regNumbers[cls][i]}</td>
-      <td>${students[cls][i]}</td>
+      <td>${s}</td>
       <td>
-        <select id="issue_${regNumbers[cls][i]}">
+        <select id="issue_${i}">
           <option value="">Select</option>
           <option>Haircut</option>
           <option>Uniform</option>
           <option>Shoes</option>
           <option>Late Coming</option>
-          <option>Mobile Usage</option>
         </select>
       </td>
-      <td><button onclick="saveRecord('${cls}','${regNumbers[cls][i]}','${students[cls][i]}')">Save</button></td>
+      <td><button onclick="saveRecord('${cls}','${regNumbers[cls][i]}','${s}',${i})">Save</button></td>
     </tr>`;
-  }
-}
-
-// SAVE RECORD
-function saveRecord(cls,reg,name){
-  let issue=document.getElementById("issue_"+reg).value;
-  if(!issue){alert("Select issue");return;}
-  records.push({
-    class:cls,reg,name,issue,
-    time:new Date().toLocaleString()
   });
-  localStorage.setItem("records",JSON.stringify(records));
-  alert("Record Saved");
 }
 
-// RECORDS
-function openRecords(){
+/* SAVE */
+async function saveRecord(cls,reg,name,i){
+  let issue=document.getElementById("issue_"+i).value;
+  if(!issue){alert("Select issue");return;}
+  await supabase.from("discipline_records").insert([{class:cls,reg,name,issue}]);
+  alert("Saved");
+}
+
+/* RECORDS */
+async function openRecords(){
   adminHome.classList.add("hidden");
   recordBox.classList.remove("hidden");
-  loadRecords();
-}
-
-function loadRecords(){
+  const {data}=await supabase.from("discipline_records").select("*").order("time",{ascending:false});
   recordTable.innerHTML="";
-  records.forEach((r,i)=>{
+  data.forEach(r=>{
     recordTable.innerHTML+=`
     <tr>
-      <td>${r.class}</td>
-      <td>${r.reg}</td>
-      <td>${r.name}</td>
-      <td>${r.issue}</td>
-      <td>${r.time}</td>
-      <td><button class="danger" onclick="del(${i})">Delete</button></td>
+      <td>${r.class}</td><td>${r.reg}</td><td>${r.name}</td>
+      <td>${r.issue}</td><td>${new Date(r.time).toLocaleString()}</td>
+      <td><button class="danger" onclick="deleteRec('${r.id}')">X</button></td>
     </tr>`;
   });
 }
-
-function del(i){
-  if(confirm("Delete record?")){
-    records.splice(i,1);
-    localStorage.setItem("records",JSON.stringify(records));
-    loadRecords();
-  }
+async function deleteRec(id){
+  await supabase.from("discipline_records").delete().eq("id",id);
+  openRecords();
 }
 
-// STUDENT VIEW
-function loadStudentRecords(){
+/* DASHBOARD */
+async function openDashboard(){
+  adminHome.classList.add("hidden");
+  dashboardBox.classList.remove("hidden");
+  const {data}=await supabase.from("discipline_records").select("*");
+  totalCount.innerText=data.length;
+  haircutCount.innerText=data.filter(r=>r.issue==="Haircut").length;
+  uniformCount.innerText=data.filter(r=>r.issue==="Uniform").length;
+  lateCount.innerText=data.filter(r=>r.issue==="Late Coming").length;
+}
+
+/* STUDENT VIEW */
+async function loadStudentRecords(){
+  const {data}=await supabase.from("discipline_records").select("*").eq("reg",loggedStudent);
   studentRecords.innerHTML="";
-  records.filter(r=>r.reg===loggedStudent).forEach(r=>{
-    studentRecords.innerHTML+=`
-    <tr>
-      <td>${r.class}</td>
-      <td>${r.issue}</td>
-      <td>${r.time}</td>
-    </tr>`;
+  data.forEach(r=>{
+    studentRecords.innerHTML+=`<tr><td>${r.class}</td><td>${r.issue}</td><td>${new Date(r.time).toLocaleString()}</td></tr>`;
   });
 }
 
-// EXPORT
+/* EXPORT */
 function exportPDF(){
   const {jsPDF}=window.jspdf;
-  let doc=new jsPDF();
+  let d=new jsPDF();
   let y=10;
-  doc.text("Discipline Records",10,y);y+=10;
-  records.forEach(r=>{
-    doc.text(`${r.class} | ${r.reg} | ${r.name} | ${r.issue} | ${r.time}`,10,y);
-    y+=8;
+  d.text("Discipline Records",10,y);y+=10;
+  recordTable.querySelectorAll("tr").forEach(r=>{
+    d.text(r.innerText,10,y);y+=8;
   });
-  doc.save("records.pdf");
+  d.save("records.pdf");
 }
-
 function exportExcel(){
-  let ws=XLSX.utils.json_to_sheet(records);
   let wb=XLSX.utils.book_new();
+  let ws=XLSX.utils.json_to_sheet(
+    [...recordTable.rows].map(r=>({
+      Class:r.cells[0].innerText,
+      Reg:r.cells[1].innerText,
+      Name:r.cells[2].innerText,
+      Issue:r.cells[3].innerText,
+      Time:r.cells[4].innerText
+    }))
+  );
   XLSX.utils.book_append_sheet(wb,ws,"Records");
   XLSX.writeFile(wb,"records.xlsx");
 }
 
-// NAVIGATION
+/* NAV */
 function back(){
   studentBox.classList.add("hidden");
   recordBox.classList.add("hidden");
+  dashboardBox.classList.add("hidden");
   adminHome.classList.remove("hidden");
 }
 function logout(){location.reload();}
