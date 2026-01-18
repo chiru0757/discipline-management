@@ -3,330 +3,184 @@
 <head>
 <meta charset="UTF-8">
 <title>Discipline Management System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- LIBRARIES -->
+<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
-*{box-sizing:border-box}
+*{box-sizing:border-box;font-family:'Poppins',sans-serif}
 body{
-  font-family:Segoe UI,Arial;
-  background:#f1f5f9;
   margin:0;
+  min-height:100vh;
+  background:linear-gradient(135deg,#1e3a8a,#2563eb);
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
-header{
-  background:#0f172a;
-  color:#fff;
-  padding:12px;
-  text-align:center;
-  font-size:18px;
-}
-.box{
+.card{
   background:#fff;
-  margin:12px;
-  padding:15px;
-  border-radius:12px;
-  box-shadow:0 4px 15px rgba(0,0,0,.08);
-}
-h3{text-align:center;margin-top:0}
-input,select,button{
   width:100%;
-  padding:10px;
-  margin:6px 0;
+  max-width:380px;
+  padding:25px;
+  border-radius:16px;
+  box-shadow:0 20px 40px rgba(0,0,0,.25);
+  animation:fadeIn .8s ease;
+}
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:translateY(0)}
+}
+h2{text-align:center;margin-bottom:5px;color:#1e293b}
+p{text-align:center;font-size:13px;color:#64748b;margin-bottom:20px}
+input,select{
+  width:100%;
+  padding:12px;
+  margin-bottom:12px;
+  border-radius:8px;
+  border:1px solid #cbd5f5;
   font-size:14px;
 }
 button{
+  width:100%;
+  padding:12px;
   background:#2563eb;
   color:#fff;
+  font-size:15px;
   border:none;
-  border-radius:8px;
+  border-radius:10px;
   cursor:pointer;
 }
 button:hover{background:#1e40af}
-button.danger{background:#dc2626}
 .hidden{display:none}
-.center{text-align:center}
-
-.table-wrap{overflow-x:auto}
-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:13px;
-}
-th,td{
-  border:1px solid #e5e7eb;
-  padding:6px;
-  text-align:center;
-}
-th{
-  background:#1e293b;
-  color:#fff;
-}
-
-/* DASHBOARD */
 .dashboard{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
-  gap:12px;
-}
-.card{
-  background:#f8fafc;
-  padding:15px;
-  border-radius:12px;
+  color:#fff;
   text-align:center;
 }
-.card h2{margin:5px 0;color:#2563eb}
-.card p{margin:0;font-size:13px;color:#475569}
+.dashboard button{
+  background:#22c55e;
+  margin:6px 0;
+}
+.logout{
+  background:#ef4444!important;
+}
 </style>
 </head>
 
 <body>
-<header>Discipline Management System</header>
 
-<!-- LOGIN -->
-<div class="box" id="loginBox">
-  <h3>Login</h3>
-  <select id="role">
+<!-- LOGIN CARD -->
+<div class="card" id="loginBox">
+  <h2>Discipline System</h2>
+  <p>Login using Supabase Authentication</p>
+
+  <select id="loginRole">
     <option value="admin">Admin</option>
+    <option value="teacher">Teacher</option>
     <option value="student">Student</option>
   </select>
-  <input id="username" placeholder="Username / Register No">
-  <input id="password" type="password" placeholder="Password">
+
+  <input type="email" id="email" placeholder="Email address" />
+  <input type="password" id="password" placeholder="Password" />
+
   <button onclick="login()">Login</button>
 </div>
 
-<!-- ADMIN HOME -->
-<div class="box hidden" id="adminHome">
-  <h3>Admin Panel</h3>
-  <button onclick="openClass('BCA A')">BCA A</button>
-  <button onclick="openClass('BCA B')">BCA B</button>
-  <button onclick="openClass('BCA C')">BCA C</button>
-  <br><br>
-  <button onclick="openRecords()">📄 Records</button>
-  <button onclick="openDashboard()">📊 Analytics</button>
-  <button onclick="logout()">Logout</button>
-</div>
-
-<!-- STUDENT ENTRY -->
-<div class="box hidden" id="studentBox">
-  <h3 id="classTitle"></h3>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Reg No</th>
-          <th>Name</th>
-          <th>Issue</th>
-          <th>Save</th>
-        </tr>
-      </thead>
-      <tbody id="studentTable"></tbody>
-    </table>
-  </div>
-  <button onclick="back()">⬅ Back</button>
-</div>
-
-<!-- RECORDS -->
-<div class="box hidden" id="recordBox">
-  <h3>Saved Records</h3>
-  <button onclick="exportPDF()">PDF</button>
-  <button onclick="exportExcel()">Excel</button>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Class</th>
-          <th>Reg</th>
-          <th>Name</th>
-          <th>Issue</th>
-          <th>Date</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody id="recordTable"></tbody>
-    </table>
-  </div>
-  <button onclick="back()">⬅ Back</button>
-</div>
-
 <!-- DASHBOARD -->
-<div class="box hidden" id="dashboardBox">
-  <h3>📊 Analytics Dashboard</h3>
-  <div class="dashboard">
-    <div class="card"><p>Total Records</p><h2 id="totalCount">0</h2></div>
-    <div class="card"><p>Haircut</p><h2 id="haircutCount">0</h2></div>
-    <div class="card"><p>Uniform</p><h2 id="uniformCount">0</h2></div>
-    <div class="card"><p>Late Coming</p><h2 id="lateCount">0</h2></div>
-  </div>
-  <button onclick="back()">⬅ Back</button>
+<div class="dashboard hidden" id="dashboard">
+  <h2>Welcome</h2>
+  <p id="roleText"></p>
+
+  <button>BCA</button>
+  <button>BCOM</button>
+  <button>BBA</button>
+
+  <button class="logout" onclick="logout()">Logout</button>
 </div>
 
 <!-- STUDENT VIEW -->
-<div class="box hidden" id="studentView">
-  <h3>Your Records</h3>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr><th>Class</th><th>Issue</th><th>Date</th></tr>
-      </thead>
-      <tbody id="studentRecords"></tbody>
-    </table>
-  </div>
-  <button onclick="logout()">Logout</button>
+<div class="dashboard hidden" id="studentView">
+  <h2>Student Portal</h2>
+  <p id="studentUUCMS"></p>
+
+  <button onclick="logout()" class="logout">Logout</button>
 </div>
 
 <script>
 /* 🔑 SUPABASE CONFIG */
 const SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";
-const SUPABASE_KEY = "YOUR_PUBLIC_ANON_KEY";
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_ANON_KEY = "YOUR_PUBLIC_ANON_KEY";
 
-/* STUDENTS */
-const students={
- "BCA A":["Arun","Bala","Charan","Deepak","Ezhil","Farooq","Gokul","Hari","Irfan","Jeeva"],
- "BCA B":["Aakash","Balaji","Chaitanya","Darshan","Eshwar","Fahad","Girish","Harish","Ishan","Jagan"],
- "BCA C":["Aditya","Bhanu","Chandan","Dilip","Eshan","Farhan","Gautam","Hemanth","Ilyas","Jashwanth"]
-};
-const regNumbers={
- "BCA A":Array.from({length:10},(_,i)=>`U03ZX24A${i+1}`),
- "BCA B":Array.from({length:10},(_,i)=>`U03ZX24B${i+1}`),
- "BCA C":Array.from({length:10},(_,i)=>`U03ZX24C${i+1}`)
-};
+const supabase = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
 
-let currentClass="", loggedStudent="";
-
-/* LOGIN */
+/* 🔐 LOGIN FUNCTION */
 async function login(){
-  const {data,error}=await supabase
-   .from("users")
-   .select("*")
-   .eq("username",username.value)
-   .eq("password",password.value)
-   .eq("role",role.value)
-   .single();
+  const emailVal = email.value.trim();
+  const passwordVal = password.value.trim();
+  const selectedRole = loginRole.value;
 
-  if(error){alert("Invalid Login");return;}
+  if(!emailVal || !passwordVal){
+    alert("Please fill all fields");
+    return;
+  }
 
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: emailVal,
+    password: passwordVal
+  });
+
+  if(error){
+    alert(error.message);
+    return;
+  }
+
+  const userId = data.user.id;
+
+  // Fetch profile
+  const { data: profile, error: pError } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .single();
+
+  if(pError){
+    alert("Profile not found");
+    return;
+  }
+
+  if(profile.role !== selectedRole){
+    alert("Role mismatch");
+    await supabase.auth.signOut();
+    return;
+  }
+
+  // Role-based UI
   loginBox.classList.add("hidden");
-  if(role.value==="admin"){
-    adminHome.classList.remove("hidden");
-  }else{
-    loggedStudent=username.value;
+
+  if(profile.role === "admin" || profile.role === "teacher"){
+    dashboard.classList.remove("hidden");
+    roleText.innerText = "Logged in as " + profile.role.toUpperCase();
+  }
+
+  if(profile.role === "student"){
     studentView.classList.remove("hidden");
-    loadStudentRecords();
+    studentUUCMS.innerText = "UUCMS: " + profile.uucms;
   }
 }
 
-/* OPEN CLASS */
-function openClass(cls){
-  currentClass=cls;
-  adminHome.classList.add("hidden");
-  studentBox.classList.remove("hidden");
-  classTitle.innerText=cls;
-  studentTable.innerHTML="";
-  students[cls].forEach((s,i)=>{
-    studentTable.innerHTML+=`
-    <tr>
-      <td>${regNumbers[cls][i]}</td>
-      <td>${s}</td>
-      <td>
-        <select id="issue_${i}">
-          <option value="">Select</option>
-          <option>Haircut</option>
-          <option>Uniform</option>
-          <option>Shoes</option>
-          <option>Late Coming</option>
-        </select>
-      </td>
-      <td><button onclick="saveRecord('${cls}','${regNumbers[cls][i]}','${s}',${i})">Save</button></td>
-    </tr>`;
-  });
+/* 🔓 LOGOUT */
+async function logout(){
+  await supabase.auth.signOut();
+  location.reload();
 }
-
-/* SAVE */
-async function saveRecord(cls,reg,name,i){
-  let issue=document.getElementById("issue_"+i).value;
-  if(!issue){alert("Select issue");return;}
-  await supabase.from("discipline_records").insert([{class:cls,reg,name,issue}]);
-  alert("Saved");
-}
-
-/* RECORDS */
-async function openRecords(){
-  adminHome.classList.add("hidden");
-  recordBox.classList.remove("hidden");
-  const {data}=await supabase.from("discipline_records").select("*").order("time",{ascending:false});
-  recordTable.innerHTML="";
-  data.forEach(r=>{
-    recordTable.innerHTML+=`
-    <tr>
-      <td>${r.class}</td><td>${r.reg}</td><td>${r.name}</td>
-      <td>${r.issue}</td><td>${new Date(r.time).toLocaleString()}</td>
-      <td><button class="danger" onclick="deleteRec('${r.id}')">X</button></td>
-    </tr>`;
-  });
-}
-async function deleteRec(id){
-  await supabase.from("discipline_records").delete().eq("id",id);
-  openRecords();
-}
-
-/* DASHBOARD */
-async function openDashboard(){
-  adminHome.classList.add("hidden");
-  dashboardBox.classList.remove("hidden");
-  const {data}=await supabase.from("discipline_records").select("*");
-  totalCount.innerText=data.length;
-  haircutCount.innerText=data.filter(r=>r.issue==="Haircut").length;
-  uniformCount.innerText=data.filter(r=>r.issue==="Uniform").length;
-  lateCount.innerText=data.filter(r=>r.issue==="Late Coming").length;
-}
-
-/* STUDENT VIEW */
-async function loadStudentRecords(){
-  const {data}=await supabase.from("discipline_records").select("*").eq("reg",loggedStudent);
-  studentRecords.innerHTML="";
-  data.forEach(r=>{
-    studentRecords.innerHTML+=`<tr><td>${r.class}</td><td>${r.issue}</td><td>${new Date(r.time).toLocaleString()}</td></tr>`;
-  });
-}
-
-/* EXPORT */
-function exportPDF(){
-  const {jsPDF}=window.jspdf;
-  let d=new jsPDF();
-  let y=10;
-  d.text("Discipline Records",10,y);y+=10;
-  recordTable.querySelectorAll("tr").forEach(r=>{
-    d.text(r.innerText,10,y);y+=8;
-  });
-  d.save("records.pdf");
-}
-function exportExcel(){
-  let wb=XLSX.utils.book_new();
-  let ws=XLSX.utils.json_to_sheet(
-    [...recordTable.rows].map(r=>({
-      Class:r.cells[0].innerText,
-      Reg:r.cells[1].innerText,
-      Name:r.cells[2].innerText,
-      Issue:r.cells[3].innerText,
-      Time:r.cells[4].innerText
-    }))
-  );
-  XLSX.utils.book_append_sheet(wb,ws,"Records");
-  XLSX.writeFile(wb,"records.xlsx");
-}
-
-/* NAV */
-function back(){
-  studentBox.classList.add("hidden");
-  recordBox.classList.add("hidden");
-  dashboardBox.classList.add("hidden");
-  adminHome.classList.remove("hidden");
-}
-function logout(){location.reload();}
 </script>
+
 </body>
 </html>
+
