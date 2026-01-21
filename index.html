@@ -4,20 +4,20 @@
 <meta charset="UTF-8">
 <title>Discipline Management System</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
 
 <style>
 *{font-family:Poppins;box-sizing:border-box}
 body{margin:0;background:#0f172a;color:#fff;padding:20px}
 .hidden{display:none}
-.card{background:#1e293b;padding:20px;border-radius:12px;margin-bottom:20px}
-select,input,button{
+.card{background:#1e293b;padding:20px;border-radius:12px;margin-bottom:15px}
+input,select,button{
   width:100%;padding:10px;margin:6px 0;border-radius:6px;border:none
 }
 button{background:#22c55e;font-weight:600;cursor:pointer}
 button:hover{background:#16a34a}
 .logout{background:#ef4444}
+nav button{margin-bottom:8px}
 table{width:100%;border-collapse:collapse;margin-top:10px}
 th,td{border:1px solid #334155;padding:6px;text-align:center}
 th{background:#334155}
@@ -32,86 +32,76 @@ th{background:#334155}
 
 <h2 align="center">📘 Discipline Management System</h2>
 
-<!-- LOGIN -->
-<div class="card" id="loginBox">
+<!-- LOGIN PAGE -->
+<div class="card" id="loginPage">
   <h3>Login</h3>
   <select id="role">
     <option value="admin">Admin</option>
     <option value="teacher">Teacher</option>
     <option value="student">Student</option>
   </select>
-
   <input id="username" placeholder="Username / Student ID">
   <input id="password" type="password" placeholder="Password">
-
   <button onclick="login()">Login</button>
 </div>
 
-<!-- ADMIN / TEACHER PANEL -->
-<div class="hidden" id="staffPanel">
+<!-- ADMIN / TEACHER DASHBOARD -->
+<div id="staffPage" class="hidden">
+  <nav class="card">
+    <button onclick="showPage('addPage')">➕ Add Record</button>
+    <button onclick="showPage('viewPage')">📋 View Records</button>
+    <button class="logout" onclick="logout()">Logout</button>
+  </nav>
+</div>
 
-  <div class="card">
-    <h3>Add Discipline Record</h3>
+<!-- ADD RECORD PAGE -->
+<div id="addPage" class="hidden card">
+  <h3>Add Discipline Record</h3>
+  <select id="course"></select>
+  <select id="student"></select>
+  <select id="issue">
+    <option>Uniform Violation</option>
+    <option>Mobile Phone Usage</option>
+    <option>Late Coming</option>
+    <option>Misbehavior</option>
+    <option>ID Card Missing</option>
+    <option>Class Bunking</option>
+  </select>
+  <input type="date" id="date">
+  <button onclick="saveRecord()">Save</button>
+</div>
 
-    <select id="course"></select>
-    <select id="student"></select>
+<!-- VIEW RECORDS PAGE -->
+<div id="viewPage" class="hidden card">
+  <h3>All Discipline Records</h3>
+  <input class="search" placeholder="Search..." oninput="loadRecords(this.value)">
+  <div class="summary" id="summary"></div>
+  <button onclick="exportExcel()">Export Excel</button>
+  <button onclick="window.print()">Export PDF</button>
+  <table>
+    <thead>
+      <tr><th>Course</th><th>Student</th><th>Issue</th><th>Date</th></tr>
+    </thead>
+    <tbody id="records"></tbody>
+  </table>
+</div>
 
-    <select id="issue">
-      <option>Uniform Violation</option>
-      <option>Mobile Phone Usage</option>
-      <option>Late Coming</option>
-      <option>Misbehavior</option>
-      <option>ID Card Missing</option>
-      <option>Class Bunking</option>
-    </select>
-
-    <input type="date" id="date">
-    <button onclick="saveRecord()">Save</button>
-  </div>
-
-  <div class="card">
-    <h3>🔍 Search Records</h3>
-    <input class="search" id="searchBox" placeholder="Search by student / course / issue / date" oninput="loadRecords()">
-  </div>
-
-  <div class="card">
-    <h3>📊 Issue Summary</h3>
-    <div class="summary" id="summary"></div>
-  </div>
-
-  <div class="card">
-    <h3>📋 All Records</h3>
-    <button onclick="exportExcel()">Export Excel</button>
-    <button onclick="window.print()">Export PDF</button>
-
-    <table>
-      <thead>
-        <tr><th>Course</th><th>Student</th><th>Issue</th><th>Date</th></tr>
-      </thead>
-      <tbody id="records"></tbody>
-    </table>
-  </div>
-
+<!-- STUDENT DASHBOARD -->
+<div id="studentPage" class="hidden card">
+  <h3>Student Dashboard</h3>
+  <button onclick="showPage('historyPage')">📘 My Discipline History</button>
   <button class="logout" onclick="logout()">Logout</button>
 </div>
 
-<!-- STUDENT PANEL -->
-<div class="hidden" id="studentPanel">
-  <div class="card">
-    <h3>🎓 My Discipline History</h3>
-    <input class="search" id="studentSearch" placeholder="Search by issue or date" oninput="loadStudent()">
-
-    <div class="summary" id="studentSummary"></div>
-
-    <table>
-      <thead>
-        <tr><th>Issue</th><th>Date</th></tr>
-      </thead>
-      <tbody id="studentRecords"></tbody>
-    </table>
-  </div>
-
-  <button class="logout" onclick="logout()">Logout</button>
+<!-- STUDENT HISTORY PAGE -->
+<div id="historyPage" class="hidden card">
+  <h3>My Discipline History</h3>
+  <input class="search" placeholder="Search issue/date" oninput="loadStudent(this.value)">
+  <div class="summary" id="studentSummary"></div>
+  <table>
+    <thead><tr><th>Issue</th><th>Date</th></tr></thead>
+    <tbody id="studentRecords"></tbody>
+  </table>
 </div>
 
 <script>
@@ -128,43 +118,46 @@ const students={BCA:[],BBA:[],BCOM:[]};
     students[c].push(c+"-"+String(i).padStart(2,"0"));
 });
 
-// INIT COURSE
+// INIT COURSE/STUDENTS
 course.innerHTML=Object.keys(students).map(c=>`<option>${c}</option>`).join("");
 course.onchange=()=>student.innerHTML=students[course.value].map(s=>`<option>${s}</option>`).join("");
 course.onchange();
 
-// LOGIN
 let currentStudent="";
+
+// LOGIN
 function login(){
   const r=role.value,u=username.value,p=password.value;
 
   if(r==="student"){
     currentStudent=u;
-    loginBox.classList.add("hidden");
-    studentPanel.classList.remove("hidden");
-    loadStudent();
+    showPage("studentPage");
     return;
   }
 
   if(users.find(x=>x.u===u && x.p===p && x.r===r)){
-    loginBox.classList.add("hidden");
-    staffPanel.classList.remove("hidden");
-    loadRecords();
-  }else alert("Invalid Login");
+    showPage("staffPage");
+  } else alert("Invalid Login");
 }
 
-// SAVE
+// NAVIGATION
+function showPage(id){
+  document.querySelectorAll("body > div").forEach(d=>d.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+}
+
+// SAVE RECORD
 function saveRecord(){
   if(!date.value){alert("Select date");return;}
-  const d=JSON.parse(localStorage.getItem("discipline")||"[]");
-  d.push({course:course.value,student:student.value,issue:issue.value,date:date.value});
-  localStorage.setItem("discipline",JSON.stringify(d));
-  loadRecords();
+  const data=JSON.parse(localStorage.getItem("discipline")||"[]");
+  data.push({course:course.value,student:student.value,issue:issue.value,date:date.value});
+  localStorage.setItem("discipline",JSON.stringify(data));
+  alert("Record Saved");
 }
 
 // LOAD STAFF RECORDS
-function loadRecords(){
-  const q=searchBox.value.toLowerCase();
+function loadRecords(q=""){
+  q=q.toLowerCase();
   const data=JSON.parse(localStorage.getItem("discipline")||"[]");
   records.innerHTML="";
   const count={};
@@ -182,9 +175,9 @@ function loadRecords(){
   summary.innerHTML=Object.entries(count).map(i=>`<span>${i[0]}: ${i[1]}</span>`).join("");
 }
 
-// LOAD STUDENT RECORDS
-function loadStudent(){
-  const q=studentSearch.value.toLowerCase();
+// LOAD STUDENT HISTORY
+function loadStudent(q=""){
+  q=q.toLowerCase();
   const data=JSON.parse(localStorage.getItem("discipline")||"[]").filter(r=>r.student===currentStudent);
   studentRecords.innerHTML="";
   const count={};
@@ -214,3 +207,4 @@ function logout(){location.reload();}
 
 </body>
 </html>
+
