@@ -5,10 +5,6 @@
 <title>Discipline Management System</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<!-- Google Font -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -34,22 +30,20 @@ body{
   from{opacity:0;transform:translateY(20px)}
   to{opacity:1;transform:translateY(0)}
 }
-h2{text-align:center;margin-bottom:5px;color:#1e293b}
-p{text-align:center;font-size:13px;color:#64748b;margin-bottom:20px}
+h2{text-align:center;color:#1e293b}
+p{text-align:center;font-size:13px;color:#64748b}
 input,select{
   width:100%;
   padding:12px;
   margin-bottom:12px;
   border-radius:8px;
   border:1px solid #cbd5f5;
-  font-size:14px;
 }
 button{
   width:100%;
   padding:12px;
   background:#2563eb;
   color:#fff;
-  font-size:15px;
   border:none;
   border-radius:10px;
   cursor:pointer;
@@ -64,18 +58,16 @@ button:hover{background:#1e40af}
   background:#22c55e;
   margin:6px 0;
 }
-.logout{
-  background:#ef4444!important;
-}
+.logout{background:#ef4444!important}
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN CARD -->
+<!-- LOGIN -->
 <div class="card" id="loginBox">
   <h2>Discipline System</h2>
-  <p>Login using Supabase Authentication</p>
+  <p>Role Based Login</p>
 
   <select id="loginRole">
     <option value="admin">Admin</option>
@@ -83,20 +75,20 @@ button:hover{background:#1e40af}
     <option value="student">Student</option>
   </select>
 
-  <input type="email" id="email" placeholder="Email address" />
+  <input type="email" id="email" placeholder="Email" />
   <input type="password" id="password" placeholder="Password" />
 
   <button onclick="login()">Login</button>
 </div>
 
-<!-- DASHBOARD -->
+<!-- ADMIN / TEACHER DASHBOARD -->
 <div class="dashboard hidden" id="dashboard">
   <h2>Welcome</h2>
   <p id="roleText"></p>
 
   <button>BCA</button>
-  <button>BCOM</button>
   <button>BBA</button>
+  <button>BCOM</button>
 
   <button class="logout" onclick="logout()">Logout</button>
 </div>
@@ -106,81 +98,50 @@ button:hover{background:#1e40af}
   <h2>Student Portal</h2>
   <p id="studentUUCMS"></p>
 
-  <button onclick="logout()" class="logout">Logout</button>
+  <button class="logout" onclick="logout()">Logout</button>
 </div>
 
 <script>
-/* 🔑 SUPABASE CONFIG */
-const SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";
-const SUPABASE_ANON_KEY = "YOUR_PUBLIC_ANON_KEY";
+// DEMO USERS (Replace with backend later)
+const users = [
+  { email:"admin@test.com", password:"admin123", role:"admin" },
+  { email:"teacher@test.com", password:"teach123", role:"teacher" },
+  { email:"student@test.com", password:"stud123", role:"student", uucms:"UUCMS2026BCA001" }
+];
 
-const supabase = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY
-);
+function login(){
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+  const role = document.getElementById("loginRole").value;
 
-/* 🔐 LOGIN FUNCTION */
-async function login(){
-  const emailVal = email.value.trim();
-  const passwordVal = password.value.trim();
-  const selectedRole = loginRole.value;
+  const user = users.find(
+    u => u.email === email && u.password === password && u.role === role
+  );
 
-  if(!emailVal || !passwordVal){
-    alert("Please fill all fields");
+  if(!user){
+    alert("Invalid credentials or role mismatch");
     return;
   }
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: emailVal,
-    password: passwordVal
-  });
+  document.getElementById("loginBox").classList.add("hidden");
 
-  if(error){
-    alert(error.message);
-    return;
+  if(role === "admin" || role === "teacher"){
+    document.getElementById("dashboard").classList.remove("hidden");
+    document.getElementById("roleText").innerText =
+      "Logged in as " + role.toUpperCase();
   }
 
-  const userId = data.user.id;
-
-  // Fetch profile
-  const { data: profile, error: pError } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .single();
-
-  if(pError){
-    alert("Profile not found");
-    return;
-  }
-
-  if(profile.role !== selectedRole){
-    alert("Role mismatch");
-    await supabase.auth.signOut();
-    return;
-  }
-
-  // Role-based UI
-  loginBox.classList.add("hidden");
-
-  if(profile.role === "admin" || profile.role === "teacher"){
-    dashboard.classList.remove("hidden");
-    roleText.innerText = "Logged in as " + profile.role.toUpperCase();
-  }
-
-  if(profile.role === "student"){
-    studentView.classList.remove("hidden");
-    studentUUCMS.innerText = "UUCMS: " + profile.uucms;
+  if(role === "student"){
+    document.getElementById("studentView").classList.remove("hidden");
+    document.getElementById("studentUUCMS").innerText =
+      "UUCMS Number: " + user.uucms;
   }
 }
 
-/* 🔓 LOGOUT */
-async function logout(){
-  await supabase.auth.signOut();
+function logout(){
   location.reload();
 }
 </script>
 
 </body>
 </html>
-
